@@ -1,0 +1,283 @@
+<div class="page">
+  <header class="topbar">
+    <div>
+      <h1>Paisa Kahan Jasta Hai?</h1>
+      <p class="muted">Track it. Budget it. Know it</p>
+    </div>
+  
+    <div class="topbar-actions">
+      <label class="month-picker">
+        <input
+          type="month"
+          [(ngModel)]="month"
+          (ngModelChange)="load()"
+        >
+      </label>
+  
+      <button
+        type="button"
+        class="reset-button"
+        (click)="resetBudget()"
+      >
+        Reset Budget
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    @if (error) {
+      <div class="alert error">{{ error }}</div>
+    }
+
+    @if (message) {
+      <div class="alert success">{{ message }}</div>
+    }
+
+    @if (!budget) {
+      <section class="card setup">
+        <h2>Create your {{ month }} budget</h2>
+        <p class="muted">
+          Start by deciding how much money you want to allocate to each category.
+        </p>
+
+        <div class="field">
+          <label>Monthly income</label>
+          <input type="number" [(ngModel)]="income" min="0">
+        </div>
+
+        <div class="category-builder">
+          <h3>Categories</h3>
+
+          @for (category of draftCategories; track $index) {
+            <div class="draft-row">
+              <span>{{ category.name }}</span>
+              <span>{{ currency(category.limit) }}</span>
+              <button class="danger" type="button"
+                      (click)="removeDraftCategory($index)">
+                Remove
+              </button>
+            </div>
+          }
+
+          <div class="add-category">
+            <input
+              placeholder="Category name"
+              [(ngModel)]="newCategoryName">
+
+            <input
+              type="number"
+              placeholder="Budget"
+              [(ngModel)]="newCategoryLimit"
+              min="0">
+
+            <button class="primary" type="button"
+                    (click)="addDraftCategory()">
+              Add
+            </button>
+          </div>
+        </div>
+
+        <button class="primary create-button"
+                type="button"
+                (click)="createBudget()">
+          Create Budget
+        </button>
+      </section>
+    }
+
+    @if (budget) {
+      <section class="summary grid grid-4">
+        <div class="card">
+          <span class="muted">Income</span>
+          <strong>{{ currency(budget.total_income) }}</strong>
+        </div>
+
+        <div class="card">
+          <span class="muted">Spent</span>
+          <strong>{{ currency(budget.total_spent) }}</strong>
+        </div>
+
+        <div class="card">
+          <span class="muted">Budget remaining</span>
+          <strong>{{ currency(budget.total_remaining) }}</strong>
+        </div>
+        <div class="card">
+          <span class="muted">Savings</span>
+          <strong>{{ currency(budget.savings) }}</strong>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Monthly budget</h2>
+            <p class="muted">
+              Your remaining amount updates automatically after every expense.
+            </p>
+          </div>
+        </div>
+
+        <div class="category-list">
+          @for (category of budget.categories; track category.id) {
+            <div class="category">
+              <div class="category-top">
+                <strong>{{ category.name }}</strong>
+                <span>
+                  {{ currency(category.spent) }} /
+                  {{ currency(category.limit) }}
+                </span>
+              </div>
+
+              <div class="progress">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="percent(category)">
+                </div>
+              </div>
+
+              <div class="category-bottom">
+                <span>{{ percent(category) }}% used</span>
+                <span>
+                  {{ currency(category.remaining) }} remaining
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="add-category-section" *ngIf="budget">
+
+          <button
+            class="add-category-toggle"
+            type="button"
+            (click)="showAddCategory = !showAddCategory"
+          >
+            {{ showAddCategory ? 'Cancel' : '+ Add Category' }}
+          </button>
+        
+          <div class="add-category-form" *ngIf="showAddCategory">
+        
+            <div class="category-inputs">
+        
+              <input
+                type="text"
+                placeholder="Category name"
+                [(ngModel)]="newCategoryName"
+              />
+        
+              <input
+                type="number"
+                placeholder="Budget"
+                [(ngModel)]="newCategoryLimit"
+                min="0"
+              />
+        
+            </div>
+        
+            <button
+              class="save-category-button"
+              type="button"
+              (click)="addCategoryToExistingBudget()"
+            >
+              Add Category
+            </button>
+        
+          </div>
+        
+        </div>
+      </section>
+
+      <section class="grid grid-2">
+        <div class="card">
+          <h2>Add expense</h2>
+
+          <div class="field">
+            <label>Category</label>
+            <select [(ngModel)]="expenseCategoryId">
+              <option [ngValue]="null">Choose category</option>
+              @for (category of budget.categories; track category.id) {
+                <option [ngValue]="category.id">
+                  {{ category.name }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Amount</label>
+            <input type="number" [(ngModel)]="expenseAmount" min="1">
+          </div>
+
+          <div class="field">
+            <label>Description</label>
+            <input
+              type="text"
+              [(ngModel)]="expenseDescription"
+              placeholder="e.g. Dinner">
+          </div>
+
+          <div class="field">
+            <label>Date</label>
+            <input type="date" [(ngModel)]="expenseDate">
+          </div>
+
+          <div class="expense-buttons">
+            <button
+              class="primary"
+              type="button"
+              (click)="addExpense()">
+              Add Expense
+            </button>
+          
+            <button
+              type="button"
+              class="mic-button"
+              (click)="startVoiceExpense()"
+              [disabled]="isListening"
+              title="Add expense by voice"
+            >
+              {{ isListening ? '🎙️' : '🎤' }}
+            </button>
+          </div>
+          
+          @if (voiceText) {
+            <div class="voice-result">
+              <strong>Heard</strong>: {{ voiceText }}
+            </div>
+          }
+        </div>       
+
+        <div class="card">
+          <h2>Recent expenses</h2>
+
+          @if (!expenses.length) {
+            <p class="muted">No expenses recorded yet.</p>
+          }
+
+          <div class="expense-list">
+            @for (expense of expenses; track expense.id) {
+              <div class="expense-row">
+                <div>
+                  <strong>{{ expense.description }}</strong>
+                  <small>
+                    {{ categoryName(expense.category_id) }} ·
+                    {{ expense.date }}
+                  </small>
+                </div>
+
+                <div class="expense-actions">
+                  <strong>{{ currency(expense.amount) }}</strong>
+                  <button
+                    class="danger"
+                    type="button"
+                    (click)="deleteExpense(expense.id)">
+                    Delete
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  </main>
+</div>
