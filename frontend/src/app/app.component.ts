@@ -156,8 +156,36 @@ export class AppComponent {
 
   deleteExpense(id: number) {
     this.budgetService.deleteExpense(id).subscribe({
-      next: () => this.load(),
-      error: () => this.showError('Could not delete expense.')
+      next: () => {
+        this.expenses = this.expenses.filter(expense => expense.id !== id);
+  
+        if (this.budget) {
+          this.budget.total_spent = this.expenses.reduce(
+            (total, expense) => total + Number(expense.amount),
+            0
+          );
+  
+          this.budget.total_remaining =
+            this.budget.total_budget - this.budget.total_spent;
+  
+          this.budget.categories.forEach(category => {
+            category.spent = this.expenses
+              .filter(expense => expense.category_id === category.id)
+              .reduce(
+                (total, expense) => total + Number(expense.amount),
+                0
+              );
+  
+            category.remaining = category.limit - category.spent;
+          });
+        }
+  
+        this.showMessage('Expense deleted.');
+      },
+  
+      error: () => {
+        this.showError('Could not delete expense.');
+      }
     });
   }
 
