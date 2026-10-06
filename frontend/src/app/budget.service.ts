@@ -7,7 +7,7 @@ import { Budget, Expense } from './models';
 })
 export class BudgetService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://127.0.0.1:8000/api';
+  private baseUrl ="https://expense-tracker-xtyc.onrender.com/api";
 
   getBudget(month: string) {
     return this.http.get<Budget>(`${this.baseUrl}/budgets/${month}`);
