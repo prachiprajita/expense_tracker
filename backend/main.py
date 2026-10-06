@@ -222,3 +222,16 @@ def add_category(
     db.refresh(budget)
 
     return budget_summary(budget, db)
+
+@app.get("/api/debug/expenses")
+def debug_expenses(db: Session = Depends(get_db)):
+    expenses = db.query(Expense).all()
+
+    return [
+        {
+            "id": expense.id,
+            "amount": str(expense.amount),
+            "description": expense.description
+        }
+        for expense in expenses
+    ]
