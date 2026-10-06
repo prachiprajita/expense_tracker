@@ -130,12 +130,24 @@ def create_expense(payload: ExpenseCreate, db: Session = Depends(get_db)):
 
 @app.get("/api/expenses", response_model=list[ExpenseOut])
 def get_expenses(month: str | None = None, db: Session = Depends(get_db)):
-    query = select(Expense).order_by(Expense.date.desc(), Expense.id.desc())
+    query = select(Expense).order_by(
+        Expense.date.desc(),
+        Expense.id.desc()
+    )
 
     if month:
+        year, month_num = map(int, month.split("-"))
+
+        start_date = date(year, month_num, 1)
+
+        if month_num == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, month_num + 1, 1)
+
         query = query.where(
-            Expense.date >= f"{month}-01",
-            Expense.date < f"{month}-32",
+            Expense.date >= start_date,
+            Expense.date < end_date,
         )
 
     return list(db.scalars(query).all())
