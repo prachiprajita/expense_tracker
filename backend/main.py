@@ -3,7 +3,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-
+from datetime import date
 from database import Base, engine, get_db
 from models import Budget, BudgetCategory, Expense
 from schemas import (
